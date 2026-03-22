@@ -14,3 +14,14 @@ Tracking soldiers inside buildings is difficult using traditional GPS systems. T
 - Shivangi Tiwari
 - Satyam Yadav
 - Kashish trivedi
+
+## Diagrams
+
+### Use Case Diagram
+![Use Case](docs/usecase.png)
+
+### Class Diagram
+![Class](docs/class.png)
+
+### Object Diagram
+![Object](docs/object.png)
