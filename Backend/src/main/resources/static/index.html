@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NSG Live Tracker</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0f1e;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #sidebar {
+      width: 300px;
+      background: #111827;
+      border-right: 1px solid #1f2d40;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    #sidebar h2 {
+      color: #00e5ff;
+      font-size: 14px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border-bottom: 1px solid #1f2d40;
+      padding-bottom: 10px;
+    }
+
+    .soldier-card {
+      background: #1a2535;
+      border: 1px solid #1f2d40;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 13px;
+    }
+
+    .soldier-card .name { color: #00e5ff; font-weight: bold; margin-bottom: 4px; }
+    .soldier-card .team { color: #94a3b8; margin-bottom: 4px; }
+    .soldier-card .floor { color: #4ade80; font-weight: bold; }
+    .soldier-card .coords { color: #64748b; font-size: 11px; margin-top: 4px; }
+
+    /* ── ALERTS PANEL ── */
+    #alerts-section h2 { color: #f87171; }
+
+    .alert-card {
+      background: #2a1a1a;
+      border: 1px solid #f87171;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 13px;
+      margin-bottom: 8px;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { border-color: #f87171; }
+      50% { border-color: #ff0000; box-shadow: 0 0 8px #ff000066; }
+    }
+
+    .alert-card .alert-title {
+      color: #f87171;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .alert-card .alert-info {
+      color: #94a3b8;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .alert-card input {
+      width: 100%;
+      background: #1a2535;
+      border: 1px solid #f87171;
+      color: #e0e0e0;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .alert-card button {
+      width: 100%;
+      background: #f87171;
+      border: none;
+      color: #0a0f1e;
+      padding: 6px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .alert-card button:hover { background: #ff4444; }
+
+    .alert-card.acknowledged {
+      animation: none;
+      border-color: #4ade80;
+      background: #1a2a1a;
+      opacity: 0.7;
+    }
+
+    .alert-card.acknowledged .alert-title { color: #4ade80; }
+
+    /* ── CANVAS ── */
+    #canvas-container {
+      flex: 1;
+      position: relative;
+    }
+
+    #three-canvas { width: 100%; height: 100%; display: block; }
+
+    #floor-controls {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+    }
+
+    .floor-btn {
+      background: #1a2535;
+      border: 1px solid #00e5ff;
+      color: #00e5ff;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    .floor-btn:hover, .floor-btn.active {
+      background: #00e5ff;
+      color: #0a0f1e;
+      font-weight: bold;
+    }
+
+    #status-bar {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: #111827;
+      border: 1px solid #1f2d40;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+
+    #status-bar span { color: #4ade80; font-weight: bold; }
+
+    /* ── ALERT POPUP ── */
+    #alert-popup {
+      display: none;
+      position: absolute;
+      top: 60px;
+      right: 16px;
+      background: #2a1a1a;
+      border: 2px solid #f87171;
+      border-radius: 10px;
+      padding: 16px;
+      width: 280px;
+      z-index: 100;
+      animation: pulse 1.5s infinite;
+    }
+
+    #alert-popup h3 { color: #f87171; margin-bottom: 8px; font-size: 14px; }
+    #alert-popup p { color: #94a3b8; font-size: 12px; margin-bottom: 4px; }
+    #alert-popup button {
+      margin-top: 8px;
+      background: #f87171;
+      border: none;
+      color: #0a0f1e;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="sidebar">
+    <!-- Soldiers -->
+    <div id="soldiers-section">
+      <h2>🔴 Live HIT Tracker</h2>
+      <div id="soldier-list">
+        <p style="color:#64748b;font-size:13px;">Waiting for soldiers...</p>
+      </div>
+    </div>
+
+    <!-- Alerts -->
+    <div id="alerts-section">
+      <h2>⚠️ Red Zone Alerts</h2>
+      <div id="alert-list">
+        <p style="color:#64748b;font-size:13px;">No active alerts</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="canvas-container">
+    <canvas id="three-canvas"></canvas>
+
+    <!-- Alert Popup -->
+    <div id="alert-popup">
+      <h3>🚨 RED ZONE BREACH</h3>
+      <p id="popup-soldier"></p>
+      <p id="popup-zone"></p>
+      <button id="popup-dismiss">Dismiss</button>
+    </div>
+
+    <div id="status-bar">
+      WebSocket: <span id="ws-status">Connecting...</span>
+    </div>
+
+    <div id="floor-controls">
+      <button class="floor-btn" data-floor="-2">B2</button>
+      <button class="floor-btn" data-floor="-1">B1</button>
+      <button class="floor-btn active" data-floor="0">GF</button>
+      <button class="floor-btn" data-floor="1">F1</button>
+      <button class="floor-btn" data-floor="2">F2</button>
+      <button class="floor-btn" data-floor="3">F3</button>
+      <button class="floor-btn" data-floor="4">F4</button>
+      <button class="floor-btn" data-floor="5">F5</button>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.2/sockjs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+  <script src="tracker.js"></script>
+</body>
+</html>
